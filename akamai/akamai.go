@@ -21,6 +21,7 @@ const (
 	userAgent = "go-akamai"
 )
 
+// Client creates an Akamai client to make requests against the Akamai API.
 type Client struct {
 	// HTTP client used to make API calls.
 	client *http.Client
