@@ -16,7 +16,7 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
-	"github.com/mojotalantikite/terraform-provider-akamai/sdk/credentials"
+	"github.com/mojotalantikite/akamai-sdk-go/akamai/credentials"
 )
 
 // Signer applies Akamai Edgegrid signing to a given request.
