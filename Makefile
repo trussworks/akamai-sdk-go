@@ -1,10 +1,7 @@
 TEST?=./...
 PKG_NAME=akamai
 
-default: build
-
-build: fmtcheck
-	go install
+default: test
 
 test: fmtcheck
 	go test $(TEST) -timeout=30s -parallel=4
