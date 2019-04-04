@@ -1,3 +1,4 @@
+// Package credentials supplies credentials to authenticate requests to the Akamai API.
 // Example of using the shared credentials provider to read from ~/.edgerc
 //
 //     creds := credentials.NewSharedCredentials()
@@ -23,12 +24,18 @@ import (
 const SharedCredsProviderName = "SharedCredentialsProvider"
 
 var (
-	ErrSharedCredentialsNotFoundFile    = errors.New(".edgerc file not found")
+	// ErrSharedCredentialsNotFoundFile is emitted when the .edgerc file is not found
+	ErrSharedCredentialsNotFoundFile = errors.New(".edgerc file not found")
+	// ErrSharedCredentialsProfileNotFound is emitted when the profile could not be loaded from .edgerc
 	ErrSharedCredentialsProfileNotFound = errors.New("could not load profile from .edgerc")
-	ErrClientSecretNotFoundFile         = errors.New("client_secret not found in .edgerc")
-	ErrClientTokenNotFoundFile          = errors.New("client_token not found in .edgerc")
-	ErrAccessTokenNotFoundFile          = errors.New("access_token not found in .edgerc")
-	ErrAkamaiHostNotFoundFile           = errors.New("host not found in .edgerc")
+	// ErrClientSecretNotFoundFile is emitted when client_secret is not found in the .edgerc
+	ErrClientSecretNotFoundFile = errors.New("client_secret not found in .edgerc")
+	// ErrClientTokenNotFoundFile is emitted when client_token is not found in the .edgerc
+	ErrClientTokenNotFoundFile = errors.New("client_token not found in .edgerc")
+	// ErrAccessTokenNotFoundFile is emitted when access_token is not found in the .edgerc
+	ErrAccessTokenNotFoundFile = errors.New("access_token not found in .edgerc")
+	// ErrAkamaiHostNotFoundFile is emitted when host is not found in the .edgerc
+	ErrAkamaiHostNotFoundFile = errors.New("host not found in .edgerc")
 )
 
 // SharedCredentialsProvider retrieves credentials from the current user's home

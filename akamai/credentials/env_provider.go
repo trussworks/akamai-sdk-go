@@ -1,3 +1,4 @@
+// Package credentials supplies credentials to authenticate requests to the Akamai API.
 // Example of using the environment variable credentials.
 //
 //     creds := credentials.NewEnvCredentials()
@@ -15,13 +16,18 @@ import (
 	"os"
 )
 
+// EnvProviderName provides a name for the Environment provider.
 const EnvProviderName = "EnvProvider"
 
 var (
+	// ErrClientSecretNotFoundEnv is emitted when AKAMAI_CLIENT_SECRET is not found in the env.
 	ErrClientSecretNotFoundEnv = errors.New("AKAMAI_CLIENT_SECRET not found in environment")
-	ErrClientTokenNotFoundEnv  = errors.New("AKAMAI_CLIENT_TOKEN not found in environment")
-	ErrAccessTokenNotFoundEnv  = errors.New("AKAMAI_ACCESS_TOKEN not found in environment")
-	ErrAkamaiHostNotFoundEnv   = errors.New("AKAMAI_HOST not found in environment")
+	// ErrClientTokenNotFoundEnv is emitted when AKAMAI_CLIENT_TOKEN is not found in the env.
+	ErrClientTokenNotFoundEnv = errors.New("AKAMAI_CLIENT_TOKEN not found in environment")
+	// ErrAccessTokenNotFoundEnv is emitted when AKAMAI_ACCESS_TOKEN is not found in the env.
+	ErrAccessTokenNotFoundEnv = errors.New("AKAMAI_ACCESS_TOKEN not found in environment")
+	// ErrAkamaiHostNotFoundEnv is emitted when AKAMAI_HOST is not found in the env.
+	ErrAkamaiHostNotFoundEnv = errors.New("AKAMAI_HOST not found in environment")
 )
 
 // An EnvProvider retrieves the credentials from the environment variables
