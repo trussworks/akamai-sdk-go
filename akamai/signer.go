@@ -22,6 +22,11 @@ import (
 // Signer applies Akamai Edgegrid signing to a given request.
 type Signer struct {
 	Credentials *credentials.Credentials
+
+	// For testing we need to pass a fake nonce and timestamp
+	// This is a bad strategy, but the signature relies upon it
+	Timestamp string
+	Nonce     string
 }
 
 // NewSigner returns a Signer pointer configured with the credentials
@@ -42,10 +47,12 @@ func (s *Signer) Sign(req *http.Request, body io.ReadSeeker) (http.Header, error
 	}
 
 	ctx := &signingCtx{
-		Request:    req,
-		Body:       body,
-		Query:      req.URL.Query(),
-		credValues: creds,
+		Request:       req,
+		Body:          body,
+		Query:         req.URL.Query(),
+		credValues:    creds,
+		formattedTime: s.Timestamp,
+		nonce:         s.Nonce,
 	}
 
 	if err := ctx.build(); err != nil {
@@ -73,16 +80,23 @@ type signingCtx struct {
 	signedAuthHeaders string
 	signingData       string
 	signingKey        string
+	signedHeaders     string
 }
 
 func (ctx *signingCtx) build() error {
-	ctx.buildTime()      // no deps
-	ctx.buildNonce()     // no deps
+	if ctx.formattedTime == "" {
+		ctx.buildTime() // no deps
+
+	}
+
+	if ctx.nonce == "" {
+		ctx.buildNonce() // no deps
+	}
 	ctx.buildPathQuery() // no deps
 
-	//	ctx.buildCanonicalHeaders() // depends on UnsignedHeaderVals
-	ctx.buildSigningKey()  // depends on credValues and formattedTime
-	ctx.buildContentHash() // no deps
+	ctx.buildCanonicalHeaders() // depends on UnsignedHeaderVals
+	ctx.buildSigningKey()       // depends on credValues and formattedTime
+	ctx.buildContentHash()      // no deps
 
 	ctx.buildAuthHeaders() // depends on formattedTime and nonce
 	ctx.buildSigningData() // depends on many things
@@ -151,17 +165,34 @@ func (ctx *signingCtx) buildPathQuery() {
 }
 
 func (ctx *signingCtx) buildCanonicalHeaders() {
-	var unsortedHeader []string
-	var sortedHeader []string
-	for k := range ctx.Request.Header {
-		unsortedHeader = append(unsortedHeader, k)
+	var headers []string
+
+	for k, v := range ctx.Request.Header {
+		if ctx.SignedHeaderVals == nil {
+			ctx.SignedHeaderVals = make(http.Header)
+		}
+
+		lowerCaseKey := strings.ToLower(k)
+		if _, ok := ctx.SignedHeaderVals[lowerCaseKey]; ok {
+			// include additional values
+			ctx.SignedHeaderVals[lowerCaseKey] = append(ctx.SignedHeaderVals[lowerCaseKey], v...)
+			continue
+		}
+
+		headers = append(headers, lowerCaseKey)
+		ctx.SignedHeaderVals[lowerCaseKey] = v
 	}
-	sort.Strings(unsortedHeader)
-	for _, k := range unsortedHeader {
+
+	sort.Strings(headers)
+
+	ctx.signedHeaders = strings.Join(headers, ";")
+
+	headerValues := make([]string, len(headers))
+	for i, k := range headers {
 		v := strings.TrimSpace(ctx.Request.Header.Get(k))
-		sortedHeader = append(sortedHeader, fmt.Sprintf("%s:%s", strings.ToLower(k), strings.ToLower(stringMinifier(v))))
+		headerValues[i] = k + ":" + strings.ToLower(stringMinifier(v))
 	}
-	ctx.canonicalHeaders = strings.Join(sortedHeader, "\t")
+	ctx.canonicalHeaders = strings.Join(headerValues, "\t")
 }
 
 // buildContentHash is the base64-encoded SHA–256 hash of the POST body.

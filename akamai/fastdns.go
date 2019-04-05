@@ -112,6 +112,7 @@ func (s *FastDNSv2Service) UpdateZone(ctx context.Context, zone *Zone) (*Zone, *
 	return z, resp, nil
 }
 
+// ZoneDeleteRequest is a slice of zones to delete when making a request to the Akamai API.
 type ZoneDeleteRequest struct {
 	Zones []*string `json:"zones,omitempty"`
 }
