@@ -22,6 +22,10 @@ import (
 // Signer applies Akamai Edgegrid signing to a given request.
 type Signer struct {
 	Credentials *credentials.Credentials
+	// HeadersToSign is a config option of Akamai Edgegrid. User must specify
+	// the headers that Signer is meant to sign.
+	HeadersToSign []string
+	MaxBody       int
 
 	// For testing we need to pass a fake nonce and timestamp
 	// This is a bad strategy, but the signature relies upon it
@@ -53,6 +57,13 @@ func (s *Signer) Sign(req *http.Request, body io.ReadSeeker) (http.Header, error
 		credValues:    creds,
 		formattedTime: s.Timestamp,
 		nonce:         s.Nonce,
+		maxBody:       s.MaxBody,
+		headersToSign: s.HeadersToSign,
+	}
+
+	// MaxBody is set in edgegrid Go library, but wasn't found in docs. Set to 131072 in code.
+	if ctx.maxBody == 0 {
+		ctx.maxBody = 131072
 	}
 
 	if err := ctx.build(); err != nil {
@@ -72,6 +83,8 @@ type signingCtx struct {
 	credValues    credentials.AuthValue
 	formattedTime string
 	nonce         string
+	maxBody       int
+	headersToSign []string
 
 	contentHash       string
 	canonicalHeaders  string
@@ -92,14 +105,13 @@ func (ctx *signingCtx) build() error {
 	if ctx.nonce == "" {
 		ctx.buildNonce() // no deps
 	}
-	ctx.buildPathQuery() // no deps
-
-	ctx.buildCanonicalHeaders() // depends on UnsignedHeaderVals
-	ctx.buildSigningKey()       // depends on credValues and formattedTime
+	ctx.buildPathQuery()        // no deps
+	ctx.buildCanonicalHeaders() // no deps
 	ctx.buildContentHash()      // no deps
+	ctx.buildAuthHeaders()      // depends on formattedTime and nonce
 
-	ctx.buildAuthHeaders() // depends on formattedTime and nonce
-	ctx.buildSigningData() // depends on many things
+	ctx.buildSigningKey()  // depends on credValues and formattedTime
+	ctx.buildSigningData() // depends on pathQuery, canonicalHeaders, contentHash, and authHeaders
 
 	ctx.buildSignedAuthHeaders() // depends on like everything
 
@@ -160,10 +172,34 @@ func (ctx *signingCtx) buildSigningData() {
 func (ctx *signingCtx) buildPathQuery() {
 	if ctx.Request.URL.RawQuery == "" {
 		ctx.pathQuery = ctx.Request.URL.Path
+		return
 	}
 	ctx.pathQuery = fmt.Sprintf("%s?%s", ctx.Request.URL.Path, ctx.Request.URL.RawQuery)
 }
 
+func (ctx *signingCtx) buildCanonicalHeaders() {
+	var unsortedHeader []string
+	var sortedHeader []string
+
+	for k := range ctx.Request.Header {
+		unsortedHeader = append(unsortedHeader, k)
+	}
+
+	sort.Strings(unsortedHeader)
+
+	for _, k := range unsortedHeader {
+		for _, sign := range ctx.headersToSign {
+			if sign == k {
+				v := strings.TrimSpace(ctx.Request.Header.Get(k))
+				sortedHeader = append(sortedHeader, fmt.Sprintf("%s:%s", strings.ToLower(k), strings.ToLower(stringMinifier(v))))
+			}
+		}
+	}
+
+	ctx.canonicalHeaders = strings.Join(sortedHeader, "\t")
+}
+
+/*
 func (ctx *signingCtx) buildCanonicalHeaders() {
 	var headers []string
 
@@ -194,6 +230,7 @@ func (ctx *signingCtx) buildCanonicalHeaders() {
 	}
 	ctx.canonicalHeaders = strings.Join(headerValues, "\t")
 }
+*/
 
 // buildContentHash is the base64-encoded SHA–256 hash of the POST body.
 // For any other request methods, this field is empty. But the tac separator (\t) must be included.
@@ -202,6 +239,7 @@ func (ctx *signingCtx) buildCanonicalHeaders() {
 // as the request will be rejected by EdgeGrid.
 func (ctx *signingCtx) buildContentHash() {
 	var (
+		contentHash  string
 		preparedBody string
 		bodyBytes    []byte
 	)
@@ -213,14 +251,14 @@ func (ctx *signingCtx) buildContentHash() {
 	}
 
 	if ctx.Request.Method == "POST" && len(preparedBody) > 0 {
-		// MaxBody is set in edgegrid Go library, but wasn't found in docs. Set to 131072.
-		if len(preparedBody) > 131072 {
-			preparedBody = preparedBody[0:131072]
+		if len(preparedBody) > ctx.maxBody {
+			preparedBody = preparedBody[0:ctx.maxBody]
 		}
 		h := sha256.Sum256([]byte(preparedBody))
-		ctx.contentHash = base64.StdEncoding.EncodeToString(h[:])
+		contentHash = base64.StdEncoding.EncodeToString(h[:])
 	}
 
+	ctx.contentHash = contentHash
 }
 
 func (ctx *signingCtx) buildAuthHeaders() {
@@ -235,6 +273,7 @@ func (ctx *signingCtx) buildAuthHeaders() {
 // buildSignedAuthHeaders puts it all together
 func (ctx *signingCtx) buildSignedAuthHeaders() {
 	signature := createSignature(ctx.signingData, ctx.signingKey)
+	fmt.Println(signature)
 
 	ctx.signedAuthHeaders = fmt.Sprintf("%ssignature=%s", ctx.authHeaders, signature)
 }

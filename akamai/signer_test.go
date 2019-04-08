@@ -22,6 +22,11 @@ var (
 	akamaiTestClientSecret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx="
 	nonce                  = "nonce-xx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 	timestamp              = "20140321T19:34:21+0000"
+	headersToSign          = []string{
+		"X-Test1",
+		"X-Test2",
+		"X-Test3",
+	}
 )
 
 type JSONTests struct {
@@ -101,17 +106,15 @@ func TestCreateAuthHeader(t *testing.T) {
 		}
 		signer.Timestamp = timestamp
 		signer.Nonce = nonce
+		signer.MaxBody = 2048
+		signer.HeadersToSign = headersToSign
 
 		signer.Sign(req, bytes.NewReader([]byte(edge.Request.Data)))
 
-		t.Errorf("Expected: %s, received %s", edge.ExpectedAuthorization, req.Header.Get("Authorization"))
-
-		/*
-			if assert.Equal(t, edge.ExpectedAuthorization, actual, fmt.Sprintf("Fail: %s", edge.Name)) {
-				t.Logf("Pass: %s\n", edge.Name)
-				t.Logf("Expected: %s - Actual %s", edge.ExpectedAuthorization, actual)
-			}
-		*/
+		if assert.Equal(t, edge.ExpectedAuthorization, req.Header.Get("Authorization")) {
+			t.Logf("Pass: %s\n", edge.Name)
+			t.Logf("Expected: %s - Actual %s", edge.ExpectedAuthorization, req.Header.Get("Authorization"))
+		}
 	}
 
 }
