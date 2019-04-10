@@ -129,3 +129,92 @@ func (s *FastDNSv2Service) DeleteZone(ctx context.Context, zd *ZoneDeleteRequest
 
 	return s.client.Do(ctx, req, nil)
 }
+
+// RecordSet is set of DNS records belonging to a particular DNS name
+type RecordSet struct {
+	Name  *string   `json:"name,omitempty"`
+	Rdata []*string `json:"rdata,omitempty"`
+	TTL   *int      `json:"ttl,omitempty"`
+	Type  *string   `json:"type,omitempty"`
+}
+
+// RecordSetOptions specifies optional parameters to the FastDNSv2ServiceListRecordSet method.
+type RecordSetOptions struct {
+	Zone string `json:"zone,omitempty"`
+	Name string `json:"name,omitempty"`
+	Type string `json:"type,omitempty"`
+}
+
+// ListRecordSet retrieves a single record set for the zone, record name, and record type specified in the URL.
+//
+// Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#getzonerecordset
+func (s *FastDNSv2Service) ListRecordSet(ctx context.Context, opt *RecordSetOptions) (*RecordSet, *Response, error) {
+	u := fmt.Sprintf("/config-dns/v2/zones/%v/names/%v/types/%v", opt.Zone, opt.Name, opt.Type)
+
+	req, err := s.client.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var rs *RecordSet
+	resp, err := s.client.Do(ctx, req, &rs)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return rs, resp, nil
+}
+
+// CreateRecordSet creates a new Record Set with the specified name and type.
+//
+// https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#postzonerecordset
+func (s *FastDNSv2Service) CreateRecordSet(ctx context.Context, opt *RecordSetOptions, rs *RecordSet) (*RecordSet, *Response, error) {
+	u := fmt.Sprintf("/config-dns/v2/zones/%v/names/%v/types/%v", opt.Zone, opt.Name, opt.Type)
+
+	req, err := s.client.NewRequest("POST", u, rs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var r *RecordSet
+	resp, err := s.client.Do(ctx, req, &r)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return r, resp, nil
+}
+
+// UpdateRecordSet replaces an existing Record Set with the request body.
+// The name and type must match the existing record.
+//
+// Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#putzonerecordset
+func (s *FastDNSv2Service) UpdateRecordSet(ctx context.Context, opt *RecordSetOptions, rs *RecordSet) (*RecordSet, *Response, error) {
+	u := fmt.Sprintf("/config-dns/v2/zones/%v/names/%v/types/%v", opt.Zone, opt.Name, opt.Type)
+
+	req, err := s.client.NewRequest("PUT", u, rs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var r *RecordSet
+	resp, err := s.client.Do(ctx, req, &r)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return r, resp, nil
+}
+
+// DeleteRecordSet removes an existing record set.
+//
+// Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#deletezonerecordset
+func (s *FastDNSv2Service) DeleteRecordSet(ctx context.Context, opt *RecordSetOptions) (*Response, error) {
+	u := fmt.Sprintf("/config-dns/v2/zones/%v/names/%v/types/%v", opt.Zone, opt.Name, opt.Type)
+	req, err := s.client.NewRequest("DELETE", u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.Do(ctx, req, nil)
+}
