@@ -99,6 +99,14 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 		return nil, err
 	}
 
+	// We need to sign the request. https://developer.akamai.com/legacy/introduction/Client_Auth.html
+	signer := NewSigner(c.Credentials)
+	b, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+	signer.Sign(req, bytes.NewReader(b))
+
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
