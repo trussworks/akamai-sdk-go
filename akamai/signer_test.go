@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/mojotalantikite/akamai-sdk-go/akamai/credentials"
 	"github.com/stretchr/testify/assert"
+	"github.com/trussworks/akamai-sdk-go/akamai/credentials"
 )
 
 var (

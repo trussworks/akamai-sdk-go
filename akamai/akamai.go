@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 
-	"github.com/mojotalantikite/akamai-sdk-go/akamai/credentials"
+	"github.com/trussworks/akamai-sdk-go/akamai/credentials"
 )
 
 const (
