@@ -218,3 +218,36 @@ func (s *FastDNSv2Service) DeleteRecordSet(ctx context.Context, opt *RecordSetOp
 
 	return s.client.Do(ctx, req, nil)
 }
+
+// Contract holds Akamai's Contract object type. It provides metadata about
+// a customer's Akamai FastDNS account.
+type Contract struct {
+	ContractID       *string   `json:"contractId,omitempty"`
+	ContractName     *string   `json:"contractName,omitempty"`
+	ContractTypeName *string   `json:"contractTypeName,omitempty"`
+	Features         []*string `json:"features,omitempty"`
+	Permissions      []*string `json:"permissions,omitempty"`
+	ZoneCount        int       `json:"zoneCount,omitempty"`
+	MaximumZones     int       `json:"maximumZones,omitempty"`
+}
+
+// GetZoneContract returns data about the Contract to which the Zone belongs.
+//
+// Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#getzonecontract
+func (s *FastDNSv2Service) GetZoneContract(ctx context.Context, zone string) (*Contract, *Response, error) {
+
+	u := fmt.Sprintf("/config-dns/v2/zones/%v/contract", zone)
+
+	req, err := s.client.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var c *Contract
+	resp, err := s.client.Do(ctx, req, &s)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return c, resp, nil
+}
