@@ -59,7 +59,7 @@ func NewClient(httpClient *http.Client, cc *credentials.Credentials) (*Client, e
 	// If no credentials are set, fall back to .edgerc file, as Akamai docs
 	// all lean on the config file. Environment variables are available.
 	if cc == nil {
-		cc = credentials.NewSharedCredentials("~/.edgerc", "default")
+		cc = credentials.NewSharedCredentials("", "default")
 	}
 
 	creds, err := cc.Get()
