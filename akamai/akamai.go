@@ -51,21 +51,33 @@ type service struct {
 // The Akamai API uses a unique base URL that is generated for every API client.
 // If this isn't set then there is no default URL we can fall back to and we
 // have to return an error.
-func NewClient(httpClient *http.Client, akamaiURL string) (*Client, error) {
+func NewClient(httpClient *http.Client, cc *credentials.Credentials) (*Client, error) {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
 
-	baseURL, err := url.Parse(akamaiURL)
+	// If no credentials are set, fall back to .edgerc file, as Akamai docs
+	// all lean on the config file. Environment variables are available.
+	if cc == nil {
+		cc = credentials.NewSharedCredentials("~/.edgerc", "default")
+	}
+
+	creds, err := cc.Get()
+	if err != nil {
+		return nil, fmt.Errorf("Could not retrieve Akamai authentication credentials")
+	}
+
+	baseURL, err := url.Parse(creds.Host)
 	if err != nil {
 		return nil, err
 
 	}
 
 	c := &Client{
-		client:    httpClient,
-		BaseURL:   baseURL,
-		UserAgent: userAgent,
+		client:      httpClient,
+		BaseURL:     baseURL,
+		Credentials: cc,
+		UserAgent:   userAgent,
 	}
 	c.common.client = c
 	c.FastDNSv2 = (*FastDNSv2Service)(&c.common)
