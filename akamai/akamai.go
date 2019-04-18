@@ -64,7 +64,7 @@ func NewClient(httpClient *http.Client, cc *credentials.Credentials) (*Client, e
 
 	creds, err := cc.Get()
 	if err != nil {
-		return nil, fmt.Errorf("Could not retrieve Akamai authentication credentials")
+		return nil, fmt.Errorf("Could not retrieve Akamai authentication credentials: %v", err)
 	}
 
 	baseURL, err := url.Parse(creds.Host)
