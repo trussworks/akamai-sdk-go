@@ -44,10 +44,25 @@ type ZoneListOptions struct {
 	GroupID     int    `url:"gid,omitempty"`
 }
 
+// ZoneList holds a response from ListZones
+type ZoneList struct {
+	Metadata *Metadata `json:"metadata,omitempty"`
+	Zones    []*Zone   `json:"zones,omitempty"`
+}
+
+// Metadata holds the occasional metadata response from FastDNS v2 API
+type Metadata struct {
+	ContractIDs   []*string `json:"contractId,omitempty"`
+	Page          *int      `json:"page,omitempty"`
+	PageSize      *int      `json:"pageSize,omitempty"`
+	ShowAll       *bool     `json:"showAll,omitempty"`
+	TotalElements *int      `json:"totalElements,omitempty"`
+}
+
 // ListZones retreives the zones for the authenticated user.
 //
 // Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#getzones
-func (s *FastDNSv2Service) ListZones(ctx context.Context, opt *ZoneListOptions) ([]*Zone, *Response, error) {
+func (s *FastDNSv2Service) ListZones(ctx context.Context, opt *ZoneListOptions) (*ZoneList, *Response, error) {
 	u := fmt.Sprintf("config-dns/v2/zones")
 	u, err := addOptions(u, opt)
 	if err != nil {
@@ -59,7 +74,7 @@ func (s *FastDNSv2Service) ListZones(ctx context.Context, opt *ZoneListOptions) 
 		return nil, nil, err
 	}
 
-	var zones []*Zone
+	var zones *ZoneList
 	resp, err := s.client.Do(ctx, req, &zones)
 	if err != nil {
 		return nil, resp, err

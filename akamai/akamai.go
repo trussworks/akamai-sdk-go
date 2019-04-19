@@ -67,10 +67,15 @@ func NewClient(httpClient *http.Client, cc *credentials.Credentials) (*Client, e
 		return nil, fmt.Errorf("Could not retrieve Akamai authentication credentials: %v", err)
 	}
 
-	baseURL, err := url.Parse(creds.Host)
+	baseURL, err := url.Parse("https://" + creds.Host)
 	if err != nil {
 		return nil, err
 
+	}
+
+	// BaseURL needs a trailing slash for requests to be made
+	if !strings.HasSuffix(baseURL.Path, "/") {
+		baseURL.Path = baseURL.Path + "/"
 	}
 
 	c := &Client{
@@ -79,6 +84,7 @@ func NewClient(httpClient *http.Client, cc *credentials.Credentials) (*Client, e
 		Credentials: cc,
 		UserAgent:   userAgent,
 	}
+
 	c.common.client = c
 	c.FastDNSv2 = (*FastDNSv2Service)(&c.common)
 
@@ -113,11 +119,16 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 
 	// We need to sign the request. https://developer.akamai.com/legacy/introduction/Client_Auth.html
 	signer := NewSigner(c.Credentials)
-	b, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return nil, err
+	if body != nil {
+		b, err := ioutil.ReadAll(buf)
+		if err != nil {
+			return nil, err
+		}
+		signer.Sign(req, bytes.NewReader(b))
+
+	} else {
+		signer.Sign(req, nil)
 	}
-	signer.Sign(req, bytes.NewReader(b))
 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -137,6 +148,12 @@ type Response struct {
 
 // Do sends the API request and returns the API response.
 func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Response, error) {
+	if ctx == nil {
+		// A nil ctx will cause a panic. Just use a background context.
+		ctx = context.Background()
+	}
+	req.WithContext(ctx)
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		select {
