@@ -273,7 +273,6 @@ func (ctx *signingCtx) buildAuthHeaders() {
 // buildSignedAuthHeaders puts it all together
 func (ctx *signingCtx) buildSignedAuthHeaders() {
 	signature := createSignature(ctx.signingData, ctx.signingKey)
-	fmt.Println(signature)
 
 	ctx.signedAuthHeaders = fmt.Sprintf("%ssignature=%s", ctx.authHeaders, signature)
 }

@@ -46,17 +46,32 @@ type ZoneListOptions struct {
 
 // ZoneList holds a response from ListZones
 type ZoneList struct {
-	Metadata *Metadata `json:"metadata,omitempty"`
-	Zones    []*Zone   `json:"zones,omitempty"`
+	Metadata *ZoneListMetadata `json:"metadata,omitempty"`
+	Zones    []*Zone           `json:"zones,omitempty"`
 }
 
-// Metadata holds the occasional metadata response from FastDNS v2 API
-type Metadata struct {
+// ZoneListMetadata holds metadata from the ZoneList response
+type ZoneListMetadata struct {
 	ContractIDs   []*string `json:"contractId,omitempty"`
 	Page          *int      `json:"page,omitempty"`
 	PageSize      *int      `json:"pageSize,omitempty"`
 	ShowAll       *bool     `json:"showAll,omitempty"`
 	TotalElements *int      `json:"totalElements,omitempty"`
+}
+
+// ZoneMetadata holds the response from GetZone
+type ZoneMetadata struct {
+	ContractID            *string `json:"contractId,omitempty"`
+	Zone                  *string `json:"zone,omitempty"`
+	Type                  *string `json:"type,omitempty"`
+	AliasCount            *int    `json:"aliasCount,omitempty"`
+	SignAndServe          *bool   `json:"signAndServe,omitempty"`
+	SignAndServeAlgorithm *string `json:"signAndServeAlgorithm,omitempty"`
+	VersionId             *string `json:"versionId,omitempty"`
+	LastModifiedDate      *string `json:"lastModifiedDate,omitempty"`
+	LastModifiedBy        *string `json:"lastModifiedBy,omitempty"`
+	LastActivationDate    *string `json:"lastActivationDate,omitempty"`
+	ActivationState       *string `json:"activationState,omitempty"`
 }
 
 // ListZones retreives the zones for the authenticated user.
@@ -81,6 +96,26 @@ func (s *FastDNSv2Service) ListZones(ctx context.Context, opt *ZoneListOptions) 
 	}
 
 	return zones, resp, nil
+}
+
+// GetZone retrieves the metadata of a single zone. Does not include record sets.
+//
+// Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#getzone
+func (s *FastDNSv2Service) GetZone(ctx context.Context, zone string) (*ZoneMetadata, *Response, error) {
+	u := fmt.Sprintf("config-dns/v2/zones/%v", zone)
+
+	req, err := s.client.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var zmeta *ZoneMetadata
+	resp, err := s.client.Do(ctx, req, &zmeta)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return zmeta, resp, nil
 }
 
 // CreateZone creates a new Zone
