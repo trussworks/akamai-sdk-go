@@ -119,16 +119,7 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 
 	// We need to sign the request. https://developer.akamai.com/legacy/introduction/Client_Auth.html
 	signer := NewSigner(c.Credentials)
-	if body != nil {
-		b, err := ioutil.ReadAll(buf)
-		if err != nil {
-			return nil, err
-		}
-		signer.Sign(req, bytes.NewReader(b))
-
-	} else {
-		signer.Sign(req, nil)
-	}
+	signer.Sign(req, buf)
 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -137,6 +128,7 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	if c.UserAgent != "" {
 		req.Header.Set("User-Agent", c.UserAgent)
 	}
+
 	return req, nil
 }
 
@@ -222,13 +214,13 @@ func CheckResponse(r *http.Response) error {
 		return nil
 	}
 
-	errorResponse := &ErrorResponse{Response: r}
+	var errorResponse AkamaiError
 	data, err := ioutil.ReadAll(r.Body)
 	if err == nil && data != nil {
-		json.Unmarshal(data, errorResponse)
+		json.Unmarshal(data, &errorResponse)
 	}
 
-	return errorResponse
+	return &errorResponse
 }
 
 // AcceptedError occurs when Akamai returns a 202 Accepted response. This means an asynchronous process
@@ -243,16 +235,8 @@ func (*AcceptedError) Error() string {
 	return "job scheduled with Akamai. check back later."
 }
 
-// Error wraps Akamai error responses.
-// API error responses are outlined in the Akamai APIs, but aren't consistent and
-// differ depending on service :( In order to deal with this we create an error type
-// per API.
-type Error struct {
-	FastDNSv2 *FastDNSv2Error
-}
-
-// FastDNSv2Error is the error type of FastDNS v2 API.
-type FastDNSv2Error struct {
+// AkamaiError is the error type of FastDNS v2 API.
+type AkamaiError struct {
 	Detail   string `json:"detail"`
 	Instance string `json:"instance"`
 	Status   int    `json:"status"`
@@ -260,21 +244,8 @@ type FastDNSv2Error struct {
 	Type     string `json:"type"`
 }
 
-func (e *FastDNSv2Error) Error() string {
-	return fmt.Sprintf("%v.%v", e.Title, e.Detail)
-}
-
-// ErrorResponse holds the errors caused by an API request.
-type ErrorResponse struct {
-	Response *http.Response // HTTP response that caused this error
-	Message  string         `json:"message"`
-	Errors   []Error        `json:"errors"`
-}
-
-func (r *ErrorResponse) Error() string {
-	return fmt.Sprintf("%v %v: %d %v %+v",
-		r.Response.Request.Method, r.Response.Request.URL,
-		r.Response.StatusCode, r.Message, r.Errors)
+func (e *AkamaiError) Error() string {
+	return fmt.Sprintf("HTTP Status: %v. %v: %v.", e.Status, e.Title, e.Detail)
 }
 
 // addOptions adds the parameters in opt as URL query parameters to s. opt

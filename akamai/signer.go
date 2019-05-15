@@ -43,7 +43,7 @@ func NewSigner(credentials *credentials.Credentials) *Signer {
 }
 
 // Sign signs Akamai requests with the provided body.
-func (s *Signer) Sign(req *http.Request, body io.ReadSeeker) (http.Header, error) {
+func (s *Signer) Sign(req *http.Request, body io.ReadWriter) (http.Header, error) {
 	creds, err := s.Credentials.Get()
 	if err != nil {
 		return http.Header{}, err
@@ -75,7 +75,7 @@ func (s *Signer) Sign(req *http.Request, body io.ReadSeeker) (http.Header, error
 
 type signingCtx struct {
 	Request            *http.Request
-	Body               io.ReadSeeker
+	Body               io.ReadWriter
 	SignedHeaderVals   http.Header
 	UnsignedHeaderVals http.Header
 	Query              url.Values
