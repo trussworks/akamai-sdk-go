@@ -469,7 +469,7 @@ type ChangeListOptions struct {
 type ChangeList struct {
 	ChangeTag        string `json:"changeTag,omitempty"`
 	LastModifiedDate string `json:"lastModifiedDate,omitempty"`
-	Stale            string `json:"stale,omitempty"`
+	Stale            bool   `json:"stale,omitempty"`
 	Zone             string `json:"zone,omitempty"`
 	ZoneVersionId    string `json:"zoneVersionId,omitempty"`
 }
