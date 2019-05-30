@@ -294,10 +294,10 @@ type RecordSetCreateRequest struct {
 	Type  string   `json:"type,omitempty"`
 }
 
-// ListRecordSet retrieves a single record set for the zone, record name, and record type specified in the URL.
+// GetRecordSet retrieves a single record set for the zone, record name, and record type specified in the URL.
 //
 // Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#getzonerecordset
-func (s *FastDNSv2Service) ListRecordSet(ctx context.Context, opt *RecordSetOptions) (*RecordSet, *Response, error) {
+func (s *FastDNSv2Service) GetRecordSet(ctx context.Context, opt *RecordSetOptions) (*RecordSet, *Response, error) {
 	u := fmt.Sprintf("/config-dns/v2/zones/%v/names/%v/types/%v", opt.Zone, opt.Name, opt.Type)
 
 	req, err := s.client.NewRequest("GET", u, nil)
