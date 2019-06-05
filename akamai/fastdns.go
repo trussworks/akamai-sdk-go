@@ -49,6 +49,10 @@ type ZoneCreateOptions struct {
 	ContractID string `url:"contractId,omitempty"`
 }
 
+type ZoneDeleteOptions struct {
+	Force bool `url:"force,omitempty"`
+}
+
 //ZoneCreateRequest specifies the parameters for the CreateZone method.
 type ZoneCreateRequest struct {
 	Zone             string   `json:"zone,omitempty"`
@@ -211,10 +215,14 @@ type ZoneDeleteResult struct {
 }
 
 // DeleteZone deletes one or more Akamai zones.
+// We set the query parameter force=true, as otherwise the delegation checks may cause
+// the delete request in some instances to take hours.
 //
 // Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#postbulkzonedelete
 func (s *FastDNSv2Service) DeleteZone(ctx context.Context, zd *ZoneDeleteRequest) (*ZoneDeleteResponse, *Response, error) {
 	u := fmt.Sprintf("config-dns/v2/zones/delete-requests")
+	force := ZoneDeleteOptions{Force: true}
+	u, err := addOptions(u, force)
 	req, err := s.client.NewRequest("POST", u, zd)
 	if err != nil {
 		return nil, nil, err
