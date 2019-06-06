@@ -219,10 +219,9 @@ type ZoneDeleteResult struct {
 // the delete request in some instances to take hours.
 //
 // Akamai API docs: https://developer.akamai.com/api/web_performance/fast_dns_zone_management/v2.html#postbulkzonedelete
-func (s *FastDNSv2Service) DeleteZone(ctx context.Context, zd *ZoneDeleteRequest) (*ZoneDeleteResponse, *Response, error) {
+func (s *FastDNSv2Service) DeleteZone(ctx context.Context, zd *ZoneDeleteRequest, zdo *ZoneDeleteOptions) (*ZoneDeleteResponse, *Response, error) {
 	u := fmt.Sprintf("config-dns/v2/zones/delete-requests")
-	force := ZoneDeleteOptions{Force: true}
-	u, err := addOptions(u, force)
+	u, err := addOptions(u, zdo)
 	req, err := s.client.NewRequest("POST", u, zd)
 	if err != nil {
 		return nil, nil, err
