@@ -598,3 +598,26 @@ func (s *FastDNSv2Service) SubmitChangeList(ctx context.Context, zone string) (*
 
 	return s.client.Do(ctx, req, nil)
 }
+
+// Resource record types supported by the Akamai FastDNS API
+const (
+	RRTypeA         = "A"
+	RRTypeAaaa      = "AAAA"
+	RRTypeAfsdb     = "AFSDB"
+	RRTypeAkamaiCdn = "AKAMAICDN"
+	RRTypeAkamaiTlc = "AKAMAITLC"
+	RRTypeCaa       = "CAA"
+	RRTypeCname     = "CNAME"
+	RRTypeHinfo     = "HINFO"
+	RRTypeLoc       = "LOC"
+	RRTypeMx        = "MX"
+	RRTypeNaptr     = "NAPTR"
+	RRTypeNs        = "NS"
+	RRTypePtr       = "PTR"
+	RRTypeRp        = "RP"
+	RRTypeSrv       = "SRV"
+	RRTypeSpf       = "SPF"
+	RRTypeSshfp     = "SSHFP"
+	RRTypeTlsa      = "TLSA"
+	RRTypeTxt       = "TXT"
+)
